@@ -20,8 +20,8 @@ export function Header() {
   };
 
   return (
-    <header className="w-full bg-[#0F0F0F] border-b border-white/10 sticky top-0 z-[100] shadow-2xl">
-      <div className="max-w-[1600px] mx-auto px-6 md:px-8 py-4 flex items-center justify-between">
+    <header className="w-full bg-[#0F0F0F] border-b border-white/10 sticky top-0 z-100 shadow-2xl">
+      <div className="max-w-400 mx-auto px-6 md:px-8 py-4 flex items-center justify-between">
         
         <div className="flex items-center gap-10">
           {/* Logo Ouse */}
@@ -46,7 +46,7 @@ export function Header() {
               >
                 {item.name}
                 {location.pathname === item.path && (
-                  <span className="absolute bottom-0 left-0 w-full h-[2px] bg-yellow-500 rounded-full" />
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-yellow-500 rounded-full" />
                 )}
               </button>
             ))}

@@ -112,7 +112,7 @@ export function MetricsDashboard() {
     <div className="min-h-screen bg-[#0F0F0F] text-[#E0E0E0] antialiased pb-20 font-sans">
       <Header />
       
-      <main className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6">
+      <main className="p-4 md:p-8 max-w-400 mx-auto space-y-6">
         
         {/* HEADER E FILTROS */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-[#161616] p-6 rounded-sm border border-white/5 shadow-xl">
@@ -145,7 +145,7 @@ export function MetricsDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-[#161616] p-6 rounded-sm border border-white/5 shadow-2xl">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-10 text-center lg:text-left">EVOLUÇÃO FINANCEIRA (FILTRADA)</h3>
-            <div className="h-[380px] w-full">
+            <div className="h-95 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={filteredReports}>
                   <defs>
@@ -161,7 +161,7 @@ export function MetricsDashboard() {
                     contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px' }} 
                     itemStyle={{ color: '#EAB308', fontSize: '12px', fontWeight: 'bold' }}
                     labelFormatter={(_, payload) => (payload && payload.length > 0) ? formatDateBR(payload[0].payload.dataInicio) : ""}
-                    // FIX: Alterado de (v: number) para (v: any) para resolver erro de build TS
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     formatter={(v: any) => [formatR$(v), "Faturamento"]} 
                   />
                   <Area type="monotone" dataKey="faturamentoTotal" stroke="#EAB308" strokeWidth={4} fill="url(#colorFat)" />
@@ -254,7 +254,7 @@ export function MetricsDashboard() {
                     const year = date.getFullYear();
 
                     return (
-                      <tr key={r.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <tr key={r.id} className="hover:bg-white/2 transition-colors group">
                         {visibleColumns.semana && (
                           <td className="p-4 font-bold text-white border-r border-white/5 text-center">
                             {r.semana || "N/A"} 
@@ -295,6 +295,7 @@ export function MetricsDashboard() {
 
 // --- SUB-COMPONENTES ---
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function StatCard({ title, value, icon, trend, color }: any) {
   return (
     <div className="bg-[#161616] p-5 rounded-sm border border-white/5 relative group transition-all shadow-lg hover:border-white/10">
@@ -314,6 +315,7 @@ function StatCard({ title, value, icon, trend, color }: any) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function FunnelRow({ label, value, total, color }: any) {
   const width = total > 0 ? (value / total) * 100 : 0;
   return (
