@@ -5,14 +5,25 @@ export interface WebinarMetrics {
   dataFim: string;
   leads: number;
   leadsGrupo: number;
+  txEntrada: number;
   picoAoVivo: number;
   pitchValor: number;
+  percentComparecimento: number;
+  percentRetencaoPitch: number;
   vendasAula: number;
+  percentVendasAula: number;
+  percentVendasListaCompleta: number;
+  faturamentoAula: number;
   vendasComercial: number;
   vendasReplay: number;
-  investimento: number;
-  custoApi: number; 
+  vendasFunil: number;
+  percentVendasFunil: number;
+  vendasTotal: number;
   faturamentoTotal: number;
+  investimento: number;
+  custoApi: number;
+  totalInvestido: number;
   roas: number;
+  observacoes: string;
   createdAt: Date;
 }
