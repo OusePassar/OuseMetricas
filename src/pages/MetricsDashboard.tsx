@@ -6,15 +6,14 @@ import { Header } from '../components/Header';
 import * as XLSX from 'xlsx';
 
 // Ícones e Gráficos
-// Ícones e Gráficos atualizados (removidos os não utilizados)
 import { 
   XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, AreaChart, Area 
 } from 'recharts';
-
 import { 
-  DollarSign, Users, TrendingUp, 
-  BarChart3, Download, MousePointer2, Settings2, Check
+  DollarSign, Users, TrendingUp, BarChart3, 
+  Download, MousePointer2, Settings2, Check,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -32,23 +31,20 @@ export function MetricsDashboard() {
   const [reports, setReports] = useState<WebinarMetrics[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filtros Globais (Mês/Ano)
+  // Filtros Globais
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+
+  // --- ESTADOS DE PAGINAÇÃO ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // --- CONTROLE DE COLUNAS ---
   const [showColMenu, setShowColMenu] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState({
-    semana: true,
-    mes: true,
-    ano: true,
-    dataInicio: false, 
-    dataFim: false,    
-    leads: true,
-    txEntrada: true,
-    vendas: true,
-    faturamento: true,
-    roas: true
+    semana: true, mes: true, ano: true, dataInicio: false, 
+    dataFim: false, leads: true, txEntrada: true,
+    vendas: true, faturamento: true, roas: true
   });
 
   const toggleColumn = (key: keyof typeof visibleColumns) => {
@@ -79,15 +75,29 @@ export function MetricsDashboard() {
     fetch();
   }, []);
 
+  // Lógica de Filtro
   const filteredReports = useMemo(() => {
-    return reports.filter(r => {
+    const filtered = reports.filter(r => {
       if (!r.dataInicio) return false;
       const reportDate = new Date(r.dataInicio + "T00:00:00");
       const month = (reportDate.getMonth() + 1).toString();
       const year = reportDate.getFullYear().toString();
       return (selectedMonth === 'all' || month === selectedMonth) && (selectedYear === 'all' || year === selectedYear);
     });
+    // Resetar para página 1 sempre que filtrar
+    return filtered;
   }, [reports, selectedMonth, selectedYear]);
+
+  // Resetar página ao mudar filtros ou itens por página
+  useEffect(() => { setCurrentPage(1); }, [selectedMonth, selectedYear, itemsPerPage]);
+
+  // --- LÓGICA DE PAGINAÇÃO ---
+  const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
+  const paginatedData = useMemo(() => {
+    const reversed = [...filteredReports].reverse();
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return reversed.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredReports, currentPage, itemsPerPage]);
 
   const formatR$ = (val: number | undefined | null) => (val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const formatNum = (val: number | undefined | null) => (val || 0).toLocaleString('pt-BR');
@@ -112,7 +122,7 @@ export function MetricsDashboard() {
     <div className="min-h-screen bg-[#0F0F0F] text-[#E0E0E0] antialiased pb-20 font-sans">
       <Header />
       
-      <main className="p-4 md:p-8 max-w-400 mx-auto space-y-6">
+      <main className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6">
         
         {/* HEADER E FILTROS */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-[#161616] p-6 rounded-sm border border-white/5 shadow-xl">
@@ -128,7 +138,7 @@ export function MetricsDashboard() {
             </select>
             <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="bg-[#0F0F0F] border border-white/10 text-xs font-bold p-2 px-4 rounded-md outline-none focus:border-yellow-500 transition-colors cursor-pointer">
               <option value="all">Todos os Anos</option>
-              {["2023", "2024", "2025", "2026"].map(y => <option key={y} value={y}>{y}</option>)}
+              {["2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026"].map(y => <option key={y} value={y}>{y}</option>)}
             </select>
             <button onClick={exportToExcel} className="flex items-center gap-2 bg-yellow-500 text-black text-[10px] font-black py-2.5 px-6 rounded-sm hover:bg-yellow-400 transition-all uppercase"><Download size={14} /> Exportar</button>
           </div>
@@ -142,10 +152,11 @@ export function MetricsDashboard() {
           <StatCard title="INVESTIMENTO TOTAL" value={formatR$(totalInvestido)} icon={<BarChart3 size={20} className="text-purple-500" />} color="bg-purple-500/10" />
         </div>
 
+        {/* GRAFICO E FUNIL */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-[#161616] p-6 rounded-sm border border-white/5 shadow-2xl">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-10 text-center lg:text-left">EVOLUÇÃO FINANCEIRA (FILTRADA)</h3>
-            <div className="h-95 w-full">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-10">EVOLUÇÃO FINANCEIRA (FILTRADA)</h3>
+            <div className="h-[380px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={filteredReports}>
                   <defs>
@@ -161,7 +172,6 @@ export function MetricsDashboard() {
                     contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px' }} 
                     itemStyle={{ color: '#EAB308', fontSize: '12px', fontWeight: 'bold' }}
                     labelFormatter={(_, payload) => (payload && payload.length > 0) ? formatDateBR(payload[0].payload.dataInicio) : ""}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     formatter={(v: any) => [formatR$(v), "Faturamento"]} 
                   />
                   <Area type="monotone" dataKey="faturamentoTotal" stroke="#EAB308" strokeWidth={4} fill="url(#colorFat)" />
@@ -193,86 +203,90 @@ export function MetricsDashboard() {
           </div>
         </div>
 
-        {/* 3. TABELA DETALHADA COM FILTRO DE COLUNAS */}
+        {/* 3. TABELA DETALHADA COM PAGINAÇÃO */}
         <div className="bg-[#161616] rounded-sm border border-white/5 overflow-hidden shadow-2xl relative">
           
-          <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
+          <div className="p-4 border-b border-white/5 flex flex-col md:flex-row justify-between items-center bg-white/5 gap-4">
             <div className="flex items-center gap-2">
               <MousePointer2 size={14} className="text-yellow-500" />
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Histórico Detalhado</h3>
+              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Histórico Detalhado ({filteredReports.length})</h3>
             </div>
 
-            <div className="relative">
-              <button 
-                onClick={() => setShowColMenu(!showColMenu)}
-                className="flex items-center gap-2 bg-[#0F0F0F] border border-white/10 px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:border-yellow-500 transition-all text-gray-400"
-              >
-                <Settings2 size={12} /> Gerenciar Colunas
-              </button>
+            <div className="flex items-center gap-4">
+              {/* SELETOR DE QUANTIDADE */}
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold text-gray-500 uppercase">Linhas:</span>
+                <select 
+                  value={itemsPerPage} 
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  className="bg-[#0F0F0F] border border-white/10 text-[10px] font-bold p-1 rounded outline-none focus:border-yellow-500"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
 
-              {showColMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-[#1A1A1A] border border-white/10 rounded-md shadow-2xl z-50 p-2 space-y-1">
-                  <p className="text-[9px] font-black text-gray-500 uppercase p-2 border-b border-white/5 mb-1 text-center">Selecionar Colunas</p>
-                  {Object.keys(visibleColumns).map((col) => (
-                    <button
-                      key={col}
-                      onClick={() => toggleColumn(col as keyof typeof visibleColumns)}
-                      className="w-full flex items-center justify-between p-2 hover:bg-white/5 rounded text-[10px] font-bold uppercase transition-all"
-                    >
-                      <span className={visibleColumns[col as keyof typeof visibleColumns] ? "text-white" : "text-gray-600"}>
-                        {getColumnLabel(col)}
-                      </span>
-                      {visibleColumns[col as keyof typeof visibleColumns] && <Check size={12} className="text-yellow-500" />}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* BOTÃO COLUNAS */}
+              <div className="relative">
+                <button onClick={() => setShowColMenu(!showColMenu)} className="flex items-center gap-2 bg-[#0F0F0F] border border-white/10 px-3 py-1.5 rounded text-[10px] font-bold uppercase hover:border-yellow-500 transition-all text-gray-400">
+                  <Settings2 size={12} /> Colunas
+                </button>
+                {showColMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-[#1A1A1A] border border-white/10 rounded-md shadow-2xl z-50 p-2">
+                    {Object.keys(visibleColumns).map((col) => (
+                      <button key={col} onClick={() => toggleColumn(col as keyof typeof visibleColumns)} className="w-full flex items-center justify-between p-2 hover:bg-white/5 rounded text-[10px] font-bold uppercase transition-all">
+                        <span className={visibleColumns[col as keyof typeof visibleColumns] ? "text-white" : "text-gray-600"}>{getColumnLabel(col)}</span>
+                        {visibleColumns[col as keyof typeof visibleColumns] && <Check size={12} className="text-yellow-500" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[11px] whitespace-nowrap">
-              <thead className="bg-[#1C1C1C] text-gray-500 uppercase font-black tracking-widest">
+              <thead className="bg-[#1C1C1C] text-gray-500 uppercase font-black tracking-widest text-center">
                 <tr>
-                  {visibleColumns.semana && <th className="p-4 border-r border-white/5 text-center">Semana (Período)</th>}
-                  {visibleColumns.mes && <th className="p-4 text-center">Mês</th>}
-                  {visibleColumns.ano && <th className="p-4 text-center">Ano</th>}
-                  {visibleColumns.dataInicio && <th className="p-4 text-center">Início</th>}
-                  {visibleColumns.dataFim && <th className="p-4 text-center">Fim</th>}
-                  {visibleColumns.leads && <th className="p-4 text-center">Leads</th>}
-                  {visibleColumns.txEntrada && <th className="p-4 text-center">Tx. Entrada</th>}
-                  {visibleColumns.vendas && <th className="p-4 text-center">Vendas</th>}
-                  {visibleColumns.faturamento && <th className="p-4 text-center">Faturamento</th>}
-                  {visibleColumns.roas && <th className="p-4 text-center">ROAS</th>}
+                  {visibleColumns.semana && <th className="p-4 border-r border-white/5">Semana (Período)</th>}
+                  {visibleColumns.mes && <th className="p-4">Mês</th>}
+                  {visibleColumns.ano && <th className="p-4">Ano</th>}
+                  {visibleColumns.dataInicio && <th className="p-4">Início</th>}
+                  {visibleColumns.dataFim && <th className="p-4">Fim</th>}
+                  {visibleColumns.leads && <th className="p-4">Leads</th>}
+                  {visibleColumns.txEntrada && <th className="p-4">Tx. Entrada</th>}
+                  {visibleColumns.vendas && <th className="p-4">Vendas</th>}
+                  {visibleColumns.faturamento && <th className="p-4">Faturamento</th>}
+                  {visibleColumns.roas && <th className="p-4">ROAS</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {filteredReports.length > 0 ? (
-                  [...filteredReports].reverse().map((r) => {
+                {paginatedData.length > 0 ? (
+                  paginatedData.map((r) => {
                     const date = new Date(r.dataInicio + "T00:00:00");
                     const monthName = MONTH_NAMES[date.getMonth()];
                     const year = date.getFullYear();
 
                     return (
-                      <tr key={r.id} className="hover:bg-white/2 transition-colors group">
+                      <tr key={r.id} className="hover:bg-white/[0.02] transition-colors group text-center">
                         {visibleColumns.semana && (
-                          <td className="p-4 font-bold text-white border-r border-white/5 text-center">
-                            {r.semana || "N/A"} 
-                            <span className="text-[9px] text-gray-500 font-normal ml-2 block lg:inline italic">
-                              ({formatDateBR(r.dataInicio)} — {formatDateBR(r.dataFim)})
-                            </span>
+                          <td className="p-4 font-bold text-white border-r border-white/5">
+                            {r.semana} <span className="text-[9px] text-gray-500 font-normal block italic">({formatDateBR(r.dataInicio)} — {formatDateBR(r.dataFim)})</span>
                           </td>
                         )}
-                        {visibleColumns.mes && <td className="p-4 text-gray-400 uppercase font-bold tracking-tighter text-center">{monthName}</td>}
-                        {visibleColumns.ano && <td className="p-4 text-gray-500 text-center font-mono">{year}</td>}
-                        {visibleColumns.dataInicio && <td className="p-4 text-gray-400 text-center">{formatDateBR(r.dataInicio)}</td>}
-                        {visibleColumns.dataFim && <td className="p-4 text-gray-400 text-center">{formatDateBR(r.dataFim)}</td>}
-                        {visibleColumns.leads && <td className="p-4 text-gray-400 text-center">{formatNum(r.leads)}</td>}
-                        {visibleColumns.txEntrada && <td className="p-4 text-blue-400 font-black text-center">{(r.txEntrada || 0).toFixed(1)}%</td>}
-                        {visibleColumns.vendas && <td className="p-4 text-gray-300 font-mono text-center">{r.vendasTotal || 0}</td>}
-                        {visibleColumns.faturamento && <td className="p-4 font-mono text-green-400 font-bold text-center">{formatR$(r.faturamentoTotal)}</td>}
+                        {visibleColumns.mes && <td className="p-4 text-gray-400 uppercase font-bold">{monthName}</td>}
+                        {visibleColumns.ano && <td className="p-4 text-gray-500 font-mono">{year}</td>}
+                        {visibleColumns.dataInicio && <td className="p-4 text-gray-400">{formatDateBR(r.dataInicio)}</td>}
+                        {visibleColumns.dataFim && <td className="p-4 text-gray-400">{formatDateBR(r.dataFim)}</td>}
+                        {visibleColumns.leads && <td className="p-4 text-gray-400">{formatNum(r.leads)}</td>}
+                        {visibleColumns.txEntrada && <td className="p-4 text-blue-400 font-black">{(r.txEntrada || 0).toFixed(1)}%</td>}
+                        {visibleColumns.vendas && <td className="p-4 text-gray-300 font-mono">{r.vendasTotal || 0}</td>}
+                        {visibleColumns.faturamento && <td className="p-4 font-mono text-green-400 font-bold">{formatR$(r.faturamentoTotal)}</td>}
                         {visibleColumns.roas && (
-                          <td className="p-4 text-center">
+                          <td className="p-4">
                             <span className="bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full font-black text-[10px] border border-yellow-500/20">
                               {(r.roas || 0).toFixed(2)}x
                             </span>
@@ -282,20 +296,43 @@ export function MetricsDashboard() {
                     );
                   })
                 ) : (
-                  <tr><td colSpan={12} className="p-20 text-center text-gray-600 uppercase tracking-[0.3em] text-[10px] font-bold">Nenhum dado encontrado</td></tr>
+                  <tr><td colSpan={10} className="p-20 text-center text-gray-600 uppercase text-[10px] font-bold">Sem dados</td></tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* CONTROLES DE PAGINAÇÃO */}
+          {totalPages > 1 && (
+            <div className="p-4 bg-white/5 border-t border-white/5 flex items-center justify-between">
+              <span className="text-[10px] font-bold text-gray-500 uppercase">
+                Página {currentPage} de {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <button 
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => p - 1)}
+                  className="p-2 bg-[#0F0F0F] border border-white/10 rounded disabled:opacity-30 hover:border-yellow-500 transition-all"
+                >
+                  <ChevronLeft size={16} className="text-yellow-500" />
+                </button>
+                <button 
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  className="p-2 bg-[#0F0F0F] border border-white/10 rounded disabled:opacity-30 hover:border-yellow-500 transition-all"
+                >
+                  <ChevronRight size={16} className="text-yellow-500" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
   );
 }
 
-// --- SUB-COMPONENTES ---
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Sub-componentes StatCard e FunnelRow permanecem os mesmos...
 function StatCard({ title, value, icon, trend, color }: any) {
   return (
     <div className="bg-[#161616] p-5 rounded-sm border border-white/5 relative group transition-all shadow-lg hover:border-white/10">
@@ -309,13 +346,12 @@ function StatCard({ title, value, icon, trend, color }: any) {
             </div>
           )}
         </div>
-        <div className={`p-3 rounded-sm ${color} border border-white/5 shadow-inner`}>{icon}</div>
+        <div className={`p-3 rounded-sm ${color} border border-white/5`}>{icon}</div>
       </div>
     </div>
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function FunnelRow({ label, value, total, color }: any) {
   const width = total > 0 ? (value / total) * 100 : 0;
   return (
@@ -328,10 +364,7 @@ function FunnelRow({ label, value, total, color }: any) {
         <span className="text-white font-mono">{value}</span>
       </div>
       <div className="w-full h-1 bg-white/5 rounded-none overflow-hidden">
-        <div 
-          className={`h-full ${color} transition-all duration-700 ease-out shadow-lg`} 
-          style={{ width: `${Math.max(width, 2)}%` }}
-        ></div>
+        <div className={`h-full ${color} transition-all duration-700 ease-out shadow-lg`} style={{ width: `${Math.max(width, 2)}%` }}></div>
       </div>
     </div>
   );
