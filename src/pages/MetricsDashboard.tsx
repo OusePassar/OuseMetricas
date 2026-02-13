@@ -40,8 +40,8 @@ export function MetricsDashboard() {
     semana: true,
     mes: true,
     ano: true,
-    dataInicio: false, // Começa desativado para não poluir, mas pode ser ativado
-    dataFim: false,    // Começa desativado
+    dataInicio: false, 
+    dataFim: false,    
     leads: true,
     txEntrada: true,
     vendas: true,
@@ -53,7 +53,6 @@ export function MetricsDashboard() {
     setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Helper para nomes amigáveis no menu de colunas
   const getColumnLabel = (key: string) => {
     switch(key) {
       case 'txEntrada': return 'Taxa Entrada';
@@ -111,7 +110,7 @@ export function MetricsDashboard() {
     <div className="min-h-screen bg-[#0F0F0F] text-[#E0E0E0] antialiased pb-20 font-sans">
       <Header />
       
-      <main className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6">
+      <main className="p-4 md:p-8 max-w-400 mx-auto space-y-6">
         
         {/* HEADER E FILTROS */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-[#161616] p-6 rounded-sm border border-white/5 shadow-xl">
@@ -141,11 +140,10 @@ export function MetricsDashboard() {
           <StatCard title="INVESTIMENTO TOTAL" value={formatR$(totalInvestido)} icon={<BarChart3 size={20} className="text-purple-500" />} color="bg-purple-500/10" />
         </div>
 
-        {/* GRAFICO E FUNIL */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-[#161616] p-6 rounded-sm border border-white/5 shadow-2xl">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-10">EVOLUÇÃO FINANCEIRA (FILTRADA)</h3>
-            <div className="h-[380px] w-full">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-10 text-center lg:text-left">EVOLUÇÃO FINANCEIRA (FILTRADA)</h3>
+            <div className="h-95 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={filteredReports}>
                   <defs>
@@ -211,7 +209,7 @@ export function MetricsDashboard() {
 
               {showColMenu && (
                 <div className="absolute right-0 mt-2 w-56 bg-[#1A1A1A] border border-white/10 rounded-md shadow-2xl z-50 p-2 space-y-1">
-                  <p className="text-[9px] font-black text-gray-500 uppercase p-2 border-b border-white/5 mb-1">Selecionar Colunas</p>
+                  <p className="text-[9px] font-black text-gray-500 uppercase p-2 border-b border-white/5 mb-1 text-center">Selecionar Colunas</p>
                   {Object.keys(visibleColumns).map((col) => (
                     <button
                       key={col}
@@ -253,8 +251,12 @@ export function MetricsDashboard() {
                     const year = date.getFullYear();
 
                     return (
-                      <tr key={r.id} className="hover:bg-white/[0.02] transition-colors group">
-                        {visibleColumns.semana && <td className="p-4 font-bold text-white border-r border-white/5 text-center">{r.semana || "N/A"}</td>}
+                      <tr key={r.id} className="hover:bg-white/2 transition-colors group">
+                        {visibleColumns.semana && (
+                          <td className="p-4 font-bold text-white border-r border-white/5 text-center">
+                            {r.semana || "N/A"} <span className="text-[9px] text-gray-500 font-normal ml-1">({formatDateBR(r.dataInicio)} - {formatDateBR(r.dataFim)})</span>
+                          </td>
+                        )}
                         {visibleColumns.mes && <td className="p-4 text-gray-400 uppercase font-bold tracking-tighter text-center">{monthName}</td>}
                         {visibleColumns.ano && <td className="p-4 text-gray-500 text-center font-mono">{year}</td>}
                         {visibleColumns.dataInicio && <td className="p-4 text-gray-400 text-center">{formatDateBR(r.dataInicio)}</td>}
