@@ -6,10 +6,12 @@ import { Header } from '../components/Header';
 import * as XLSX from 'xlsx';
 
 // Ícones e Gráficos
+// Ícones e Gráficos atualizados (removidos os não utilizados)
 import { 
   XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, AreaChart, Area 
 } from 'recharts';
+
 import { 
   DollarSign, Users, TrendingUp, 
   BarChart3, Download, MousePointer2, Settings2, Check
@@ -110,7 +112,7 @@ export function MetricsDashboard() {
     <div className="min-h-screen bg-[#0F0F0F] text-[#E0E0E0] antialiased pb-20 font-sans">
       <Header />
       
-      <main className="p-4 md:p-8 max-w-400 mx-auto space-y-6">
+      <main className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6">
         
         {/* HEADER E FILTROS */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-[#161616] p-6 rounded-sm border border-white/5 shadow-xl">
@@ -143,7 +145,7 @@ export function MetricsDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-[#161616] p-6 rounded-sm border border-white/5 shadow-2xl">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-10 text-center lg:text-left">EVOLUÇÃO FINANCEIRA (FILTRADA)</h3>
-            <div className="h-95 w-full">
+            <div className="h-[380px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={filteredReports}>
                   <defs>
@@ -159,7 +161,8 @@ export function MetricsDashboard() {
                     contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px' }} 
                     itemStyle={{ color: '#EAB308', fontSize: '12px', fontWeight: 'bold' }}
                     labelFormatter={(_, payload) => (payload && payload.length > 0) ? formatDateBR(payload[0].payload.dataInicio) : ""}
-                    formatter={(v: number) => [formatR$(v), "Faturamento"]} 
+                    // FIX: Alterado de (v: number) para (v: any) para resolver erro de build TS
+                    formatter={(v: any) => [formatR$(v), "Faturamento"]} 
                   />
                   <Area type="monotone" dataKey="faturamentoTotal" stroke="#EAB308" strokeWidth={4} fill="url(#colorFat)" />
                 </AreaChart>
@@ -231,7 +234,7 @@ export function MetricsDashboard() {
             <table className="w-full text-left text-[11px] whitespace-nowrap">
               <thead className="bg-[#1C1C1C] text-gray-500 uppercase font-black tracking-widest">
                 <tr>
-                  {visibleColumns.semana && <th className="p-4 border-r border-white/5 text-center">Semana</th>}
+                  {visibleColumns.semana && <th className="p-4 border-r border-white/5 text-center">Semana (Período)</th>}
                   {visibleColumns.mes && <th className="p-4 text-center">Mês</th>}
                   {visibleColumns.ano && <th className="p-4 text-center">Ano</th>}
                   {visibleColumns.dataInicio && <th className="p-4 text-center">Início</th>}
@@ -251,10 +254,13 @@ export function MetricsDashboard() {
                     const year = date.getFullYear();
 
                     return (
-                      <tr key={r.id} className="hover:bg-white/2 transition-colors group">
+                      <tr key={r.id} className="hover:bg-white/[0.02] transition-colors group">
                         {visibleColumns.semana && (
                           <td className="p-4 font-bold text-white border-r border-white/5 text-center">
-                            {r.semana || "N/A"} <span className="text-[9px] text-gray-500 font-normal ml-1">({formatDateBR(r.dataInicio)} - {formatDateBR(r.dataFim)})</span>
+                            {r.semana || "N/A"} 
+                            <span className="text-[9px] text-gray-500 font-normal ml-2 block lg:inline italic">
+                              ({formatDateBR(r.dataInicio)} — {formatDateBR(r.dataFim)})
+                            </span>
                           </td>
                         )}
                         {visibleColumns.mes && <td className="p-4 text-gray-400 uppercase font-bold tracking-tighter text-center">{monthName}</td>}
@@ -276,7 +282,7 @@ export function MetricsDashboard() {
                     );
                   })
                 ) : (
-                  <tr><td colSpan={10} className="p-20 text-center text-gray-600 uppercase tracking-[0.3em] text-[10px] font-bold">Nenhum dado encontrado</td></tr>
+                  <tr><td colSpan={12} className="p-20 text-center text-gray-600 uppercase tracking-[0.3em] text-[10px] font-bold">Nenhum dado encontrado</td></tr>
                 )}
               </tbody>
             </table>
@@ -289,7 +295,6 @@ export function MetricsDashboard() {
 
 // --- SUB-COMPONENTES ---
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function StatCard({ title, value, icon, trend, color }: any) {
   return (
     <div className="bg-[#161616] p-5 rounded-sm border border-white/5 relative group transition-all shadow-lg hover:border-white/10">
@@ -303,13 +308,12 @@ function StatCard({ title, value, icon, trend, color }: any) {
             </div>
           )}
         </div>
-        <div className={`p-3 rounded-sm ${color} border border-white/5`}>{icon}</div>
+        <div className={`p-3 rounded-sm ${color} border border-white/5 shadow-inner`}>{icon}</div>
       </div>
     </div>
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function FunnelRow({ label, value, total, color }: any) {
   const width = total > 0 ? (value / total) * 100 : 0;
   return (
