@@ -11,8 +11,8 @@ import {
   ResponsiveContainer, AreaChart, Area 
 } from 'recharts';
 import { 
-  DollarSign, Users, TrendingUp, Target, Calendar,
-  BarChart3, Download, MousePointer2, Filter, Settings2, Check
+  DollarSign, Users, TrendingUp, 
+  BarChart3, Download, MousePointer2, Settings2, Check
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -289,6 +289,7 @@ export function MetricsDashboard() {
 
 // --- SUB-COMPONENTES ---
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function StatCard({ title, value, icon, trend, color }: any) {
   return (
     <div className="bg-[#161616] p-5 rounded-sm border border-white/5 relative group transition-all shadow-lg hover:border-white/10">
@@ -308,6 +309,7 @@ function StatCard({ title, value, icon, trend, color }: any) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function FunnelRow({ label, value, total, color }: any) {
   const width = total > 0 ? (value / total) * 100 : 0;
   return (
