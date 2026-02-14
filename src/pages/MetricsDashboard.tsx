@@ -77,7 +77,7 @@ export function MetricsDashboard() {
     fetch();
   }, []);
 
-  // --- LÓGICA DE FILTRO REFORMULADA ---
+  // --- LÓGICA DE FILTRO ---
   const filteredReports = useMemo(() => {
     return reports.filter(r => {
       if (!r.dataInicio) return false;
@@ -113,11 +113,21 @@ export function MetricsDashboard() {
   const formatR$ = (val: number | undefined | null) => (val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const formatNum = (val: number | undefined | null) => (val || 0).toLocaleString('pt-BR');
 
+  // Variável auxiliar apenas para trend indicators (comparativo simples)
   const latestReport = filteredReports.length > 0 ? filteredReports[filteredReports.length - 1] : null;
+
+  // --- CÁLCULOS DE TOTAIS DO PERÍODO SELECIONADO ---
   const totalFaturamento = filteredReports.reduce((acc, curr) => acc + (curr.faturamentoTotal || 0), 0);
   const totalLeads = filteredReports.reduce((acc, curr) => acc + (curr.leads || 0), 0);
   const totalInvestido = filteredReports.reduce((acc, curr) => acc + (curr.totalInvestido || 0), 0);
   const avgRoas = totalInvestido > 0 ? totalFaturamento / totalInvestido : 0;
+
+  // --- NOVOS CÁLCULOS PARA O FUNIL (Somando o período filtrado) ---
+  const totalVendasAula = filteredReports.reduce((acc, curr) => acc + (curr.vendasAula || 0), 0);
+  const totalVendasComercial = filteredReports.reduce((acc, curr) => acc + (curr.vendasComercial || 0), 0);
+  const totalVendasReplay = filteredReports.reduce((acc, curr) => acc + (curr.vendasReplay || 0), 0);
+  const totalVendasFunil = filteredReports.reduce((acc, curr) => acc + (curr.vendasFunil || 0), 0);
+  const totalVendasGeral = filteredReports.reduce((acc, curr) => acc + (curr.vendasTotal || 0), 0);
 
   const exportToExcel = () => {
     if (filteredReports.length === 0) return alert("Sem dados.");
@@ -155,7 +165,7 @@ export function MetricsDashboard() {
           </div>
         </div>
 
-        {/* CARDS KPIs */}
+        {/* CARDS KPIs - ESTES JÁ ESTAVAM CORRETOS (SOMATÓRIO) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard title="FATURAMENTO PERÍODO" value={formatR$(totalFaturamento)} icon={<DollarSign size={20} className="text-green-500" />} trend={latestReport ? `${(latestReport.roas || 0).toFixed(2)}x ROAS ÚLT.` : ""} color="bg-green-500/10" />
           <StatCard title="LEADS NO PERÍODO" value={formatNum(totalLeads)} icon={<Users size={20} className="text-blue-500" />} trend={latestReport ? `${(latestReport.txEntrada || 0).toFixed(1)}% CONV. GRUPO` : ""} color="bg-blue-500/10" />
@@ -165,12 +175,11 @@ export function MetricsDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* GRÁFICO COM FILTRO DE DATA POR CALENDÁRIO */}
+          {/* GRÁFICO */}
           <div className="lg:col-span-2 bg-[#161616] p-8 rounded-2xl border border-white/5 shadow-2xl overflow-hidden">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">EVOLUÇÃO FINANCEIRA</h3>
               
-              {/* INPUTS DE DATA (SUBSTITUI O BRUSH) */}
               <div className="flex items-center gap-3 bg-[#0F0F0F] p-2 rounded-xl border border-white/5">
                 <CalendarDays size={14} className="text-yellow-500 ml-1" />
                 <input 
@@ -221,31 +230,35 @@ export function MetricsDashboard() {
             </div>
           </div>
 
-          {/* FUNIL */}
+          {/* FUNIL - AGORA USANDO OS TOTAIS DO PERÍODO */}
           <div className="bg-[#161616] p-8 rounded-2xl border border-white/5 shadow-2xl">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-10">QUEBRA DE VENDAS</h3>
-            {latestReport ? (
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-10">QUEBRA DE VENDAS (PERÍODO)</h3>
+            {filteredReports.length > 0 ? (
               <div className="space-y-8">
-                <FunnelRow label="Vendas Aula" value={latestReport.vendasAula || 0} total={latestReport.vendasTotal || 0} color="bg-green-500" />
-                <FunnelRow label="Vendas Comercial" value={latestReport.vendasComercial || 0} total={latestReport.vendasTotal || 0} color="bg-blue-500" />
-                <FunnelRow label="Vendas Replay" value={latestReport.vendasReplay || 0} total={latestReport.vendasTotal || 0} color="bg-yellow-500" />
-                <FunnelRow label="Vendas Funil" value={latestReport.vendasFunil || 0} total={latestReport.vendasTotal || 0} color="bg-purple-500" />
+                {/* Aqui substituímos latestReport.X por totalVendasX */}
+                <FunnelRow label="Vendas Aula" value={totalVendasAula} total={totalVendasGeral} color="bg-green-500" />
+                <FunnelRow label="Vendas Comercial" value={totalVendasComercial} total={totalVendasGeral} color="bg-blue-500" />
+                <FunnelRow label="Vendas Replay" value={totalVendasReplay} total={totalVendasGeral} color="bg-yellow-500" />
+                <FunnelRow label="Vendas Funil" value={totalVendasFunil} total={totalVendasGeral} color="bg-purple-500" />
+                
                 <div className="pt-10 mt-10 border-t border-white/5 grid grid-cols-2 gap-6">
                   <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
                     <p className="text-[9px] text-gray-500 uppercase mb-1 font-bold tracking-widest">Total Unidades</p>
-                    <p className="text-2xl font-mono font-bold text-white">{latestReport.vendasTotal || 0}</p>
+                    {/* Total do período */}
+                    <p className="text-2xl font-mono font-bold text-white">{totalVendasGeral}</p>
                   </div>
                   <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
-                    <p className="text-[9px] text-gray-500 uppercase mb-1 font-bold tracking-widest">ROAS Semana</p>
-                    <p className="text-2xl font-mono font-bold text-yellow-500">{(latestReport.roas || 0).toFixed(2)}x</p>
+                    <p className="text-[9px] text-gray-500 uppercase mb-1 font-bold tracking-widest">ROAS Médio</p>
+                    {/* ROAS Médio do período */}
+                    <p className="text-2xl font-mono font-bold text-yellow-500">{avgRoas.toFixed(2)}x</p>
                   </div>
                 </div>
               </div>
-            ) : <div className="h-full flex items-center justify-center text-gray-600 text-xs italic uppercase tracking-widest font-bold">Sem dados</div>}
+            ) : <div className="h-full flex items-center justify-center text-gray-600 text-xs italic uppercase tracking-widest font-bold">Sem dados no período</div>}
           </div>
         </div>
 
-        {/* TABELA PAGINADA */}
+        {/* TABELA PAGINADA (MANTIDA IGUAL) */}
         <div className="bg-[#161616] rounded-2xl border border-white/5 overflow-hidden shadow-2xl relative">
           <div className="p-6 border-b border-white/5 flex flex-col md:flex-row justify-between items-center bg-white/[0.02] gap-4">
             <div className="flex items-center gap-3">
@@ -363,6 +376,7 @@ export function MetricsDashboard() {
   );
 }
 
+// Componentes Auxiliares (StatCard e FunnelRow) continuam os mesmos
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function StatCard({ title, value, icon, trend, color }: any) {
   return (
